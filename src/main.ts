@@ -1,22 +1,9 @@
 import { bootstrapApplication } from '@angular/platform-browser';
+import { provideHttpClient } from '@angular/common/http';
 import { AppComponent } from './app/app.component';
-import { provideHttpClient, withFetch } from '@angular/common/http';
-import { provideNzI18n, en_US } from 'ng-zorro-antd/i18n';
-import { registerLocaleData } from '@angular/common';
-import en from '@angular/common/locales/en';
-import { ApplicationConfig } from '@angular/core';
-import { importProvidersFrom } from '@angular/core';
-import { NzMessageModule } from 'ng-zorro-antd/message';
 
-registerLocaleData(en);
-
-export const appConfig: ApplicationConfig = {
+bootstrapApplication(AppComponent, {
   providers: [
-    provideHttpClient(withFetch()), // This is where you configure HttpClient to use fetch
-    provideNzI18n(en_US),
-    importProvidersFrom(NzMessageModule)
+    provideHttpClient(),
   ]
-};
-
-bootstrapApplication(AppComponent, appConfig)
-  .catch(err => console.error(err));
+}).catch(err => console.error(err));

@@ -9,8 +9,9 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { BasurerosService, Basurero } from './basureros.service';
 import { MessageService } from '../message.service';
-import { HttpClientModule } from '@angular/common/http';
-
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HttpClientModule, provideHttpClient, withFetch } from '@angular/common/http';
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -24,13 +25,15 @@ import { HttpClientModule } from '@angular/common/http';
     NzButtonModule,
     NzModalModule,
     HttpClientModule,
-    
+    ReactiveFormsModule,
+
+
   ],
   template: `
     <h1>Gestión de Basureros</h1>
-    <img src='https://img.freepik.com/vector-gratis/ilustracion-icono-cubo-basura_53876-5598.jpg?w=826&t=st=1720246432~exp=1720247032~hmac=4ff747077824debf50608436ab48f8bd28de514ddfd2f6c10e54f68259181bf6'[width]="100" height="100">
-    
-    @if (messageService.message()) {
+    <img src='https://img.freepik.com/vector-gratis/ilustracion-icono-cubo-basura_53876-5598.jpg?w=826&t=st=1720246432~exp=1720247032~hmac=4ff747077824debf50608436ab48f8bd28de514ddfd2f6c10e54f68259181bf6' width="100" height="100">
+
+    <div *ngIf="messageService.message()">
       <div [ngClass]="{
         'message': true,
         'success': messageService.message()?.type === 'success',
@@ -39,9 +42,7 @@ import { HttpClientModule } from '@angular/common/http';
       }">
         {{ messageService.message()?.content }}
       </div>
-    }
-
-    <button nz-button nzType="primary" (click)="showModal()">Agregar Basurero</button>
+    </div>
 
     <nz-table #basicTable [nzData]="basureros">
       <thead>
@@ -67,36 +68,52 @@ import { HttpClientModule } from '@angular/common/http';
       </tbody>
     </nz-table>
 
-    <nz-modal [(nzVisible)]="isVisible" [nzTitle]="modalTitle" (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()">
-      <ng-container *nzModalContent>
-        <form nz-form>
-          <nz-form-item>
-            <nz-form-label>Nombre</nz-form-label>
-            <nz-form-control>
-              <input nz-input [(ngModel)]="currentBasurero.name" name="name" required>
-            </nz-form-control>
-          </nz-form-item>
-          <nz-form-item>
-            <nz-form-label>Ubicación</nz-form-label>
-            <nz-form-control>
-              <input nz-input [(ngModel)]="currentBasurero.location" name="location" required>
-            </nz-form-control>
-          </nz-form-item>
-          <nz-form-item>
-            <nz-form-label>Encargado</nz-form-label>
-            <nz-form-control>
-              <input nz-input [(ngModel)]="currentBasurero.incharge" name="incharge" required>
-            </nz-form-control>
-          </nz-form-item>
-          <nz-form-item>
-            <nz-form-label>Capacidad</nz-form-label>
-            <nz-form-control>
-              <input nz-input [(ngModel)]="currentBasurero.capacity" name="capacity" required>
-            </nz-form-control>
-          </nz-form-item>
-        </form>
-      </ng-container>
-    </nz-modal>
+    <h2>{{ editMode ? 'Editar Basurero' : 'Agregar Basurero' }}</h2>
+    <form [formGroup]="basureroForm" (ngSubmit)="onSubmit()">
+      <div nz-form-item>
+        <div nz-form-label>
+          <label for="name">Nombre</label>
+        </div>
+        <div nz-form-control>
+          <input nz-input id="name" formControlName="name" required>
+        </div>
+      </div>
+
+      <div nz-form-item>
+        <div nz-form-label>
+          <label for="location">Ubicación</label>
+        </div>
+        <div nz-form-control>
+          <input nz-input id="location" formControlName="location" required>
+        </div>
+      </div>
+
+      <div nz-form-item>
+        <div nz-form-label>
+          <label for="incharge">Encargado</label>
+        </div>
+        <div nz-form-control>
+          <input nz-input id="incharge" formControlName="incharge" required>
+        </div>
+      </div>
+
+      <div nz-form-item>
+        <div nz-form-label>
+          <label for="capacity">Capacidad</label>
+        </div>
+        <div nz-form-control>
+          <input nz-input id="capacity" formControlName="capacity" required>
+        </div>
+      </div>
+
+      <div nz-form-item>
+        <div nz-form-control>
+          <button nz-button nzType="primary" type="submit" [disabled]="basureroForm.invalid">
+            {{ editMode ? 'Actualizar' : 'Agregar' }}
+          </button>
+        </div>
+      </div>
+    </form>
   `,
   styles: [`
     .message {
@@ -120,20 +137,22 @@ import { HttpClientModule } from '@angular/common/http';
 })
 export class AppComponent implements OnInit {
   basureros: Basurero[] = [];
-  currentBasurero: Basurero = {
-    name: '',
-    location: '',
-    incharge: '',
-    capacity: ''
-  };
-  isVisible = false;
-  modalTitle = '';
-  isEditing = false;
+  basureroForm: FormGroup;
+  editMode = false;
+  currentBasureroId: number | null = null;
 
   constructor(
+    private fb: FormBuilder,
     private basurerosService: BasurerosService,
-    public messageService: MessageService,
-  ) {}
+    public messageService: MessageService
+  ) {
+    this.basureroForm = this.fb.group({
+      name: ['', Validators.required],
+      location: ['', Validators.required],
+      incharge: ['', Validators.required],
+      capacity: ['', Validators.required]
+    });
+  }
 
   ngOnInit() {
     this.getBasureros();
@@ -151,36 +170,26 @@ export class AppComponent implements OnInit {
     });
   }
 
-  showModal(): void {
-    this.isVisible = true;
-    this.modalTitle = 'Agregar Basurero';
-    this.isEditing = false;
-    this.currentBasurero = {
-      name: '',
-      location: '',
-      incharge: '',
-      capacity: ''
-    };
-  }
-
-  handleOk(): void {
-    if (this.isEditing) {
-      this.updateBasurero();
-    } else {
-      this.addBasurero();
+  onSubmit(): void {
+    if (this.basureroForm.valid) {
+      if (this.editMode) {
+        this.updateBasurero();
+      } else {
+        this.addBasurero();
+      }
     }
   }
 
-  handleCancel(): void {
-    this.isVisible = false;
-  }
-
   addBasurero(): void {
-    this.basurerosService.addBasurero(this.currentBasurero).subscribe({
+    const newBasurero: Basurero = this.basureroForm.value;
+    newBasurero.id = null;
+
+    this.basurerosService.addBasurero(newBasurero).subscribe({
       next: (data) => {
         this.basureros.push(data);
-        this.isVisible = false;
+        this.basureroForm.reset();
         this.messageService.success('Basurero agregado exitosamente');
+        this.getBasureros(); // Refresh the list
       },
       error: (error) => {
         this.messageService.error('Error al agregar basurero');
@@ -190,25 +199,41 @@ export class AppComponent implements OnInit {
   }
 
   editBasurero(basurero: Basurero): void {
-    this.currentBasurero = { ...basurero };
-    this.isVisible = true;
-    this.modalTitle = 'Editar Basurero';
-    this.isEditing = true;
+    this.editMode = true;
+    this.currentBasureroId = basurero.id;
+    this.basureroForm.patchValue({
+      name: basurero.name,
+      location: basurero.location,
+      incharge: basurero.incharge,
+      capacity: basurero.capacity
+    });
   }
 
   updateBasurero(): void {
-    this.basurerosService.updateBasurero(this.currentBasurero).subscribe({
-      next: (data) => {
-        const index = this.basureros.findIndex(b => b.id === data.id);
-        this.basureros[index] = data;
-        this.isVisible = false;
-        this.messageService.success('Basurero actualizado exitosamente');
-      },
-      error: (error) => {
-        this.messageService.error('Error al actualizar basurero');
-        console.error('Error updating basurero:', error);
-      }
-    });
+    if (this.currentBasureroId !== null) {
+      const updatedBasurero: Basurero = {
+        ...this.basureroForm.value,
+        id: this.currentBasureroId
+      };
+
+      this.basurerosService.updateBasurero(updatedBasurero).subscribe({
+        next: (data) => {
+          const index = this.basureros.findIndex(b => b.id === data.id);
+          if (index !== -1) {
+            this.basureros[index] = data;
+          }
+          this.basureroForm.reset();
+          this.editMode = false;
+          this.currentBasureroId = null;
+          this.messageService.success('Basurero actualizado exitosamente');
+          this.getBasureros(); 
+        },
+        error: (error) => {
+          this.messageService.error('Error al actualizar basurero');
+          console.error('Error updating basurero:', error);
+        }
+      });
+    }
   }
 
   deleteBasurero(basurero: Basurero): void {

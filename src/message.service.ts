@@ -1,6 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 
-export interface Message {
+interface Message {
   type: 'success' | 'error' | 'info';
   content: string;
 }
@@ -9,30 +9,30 @@ export interface Message {
   providedIn: 'root'
 })
 export class MessageService {
-  private messageSignal = signal<Message | null>(null);
+  private messageInfo: Message | null = null;
 
-  get message() {
-    return this.messageSignal.asReadonly();
+  message(): Message | null {
+    return this.messageInfo;
   }
 
-  success(content: string) {
-    this.messageSignal.set({ type: 'success', content });
-    this.clearMessageAfterDelay();
+  success(content: string): void {
+    this.setMessage('success', content);
   }
 
-  error(content: string) {
-    this.messageSignal.set({ type: 'error', content });
-    this.clearMessageAfterDelay();
+  error(content: string): void {
+    this.setMessage('error', content);
   }
 
-  info(content: string) {
-    this.messageSignal.set({ type: 'info', content });
-    this.clearMessageAfterDelay();
+  info(content: string): void {
+    this.setMessage('info', content);
   }
 
-  private clearMessageAfterDelay() {
-    setTimeout(() => {
-      this.messageSignal.set(null);
-    }, 3000);
+  private setMessage(type: 'success' | 'error' | 'info', content: string): void {
+    this.messageInfo = { type, content };
+    setTimeout(() => this.clear(), 3000); // Clear message after 3 seconds
+  }
+
+  private clear(): void {
+    this.messageInfo = null;
   }
 }
