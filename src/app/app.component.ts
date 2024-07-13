@@ -1,17 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzModalModule } from 'ng-zorro-antd/modal';
-import { BasurerosService, Basurero } from './basureros.service';
+import { BasurerosService } from './basureros.service';
+import { Basurero } from './models/basurero.model';
 import { MessageService } from '../message.service';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ReactiveFormsModule } from '@angular/forms';
-import { HttpClientModule, provideHttpClient, withFetch } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -26,8 +26,6 @@ import { HttpClientModule, provideHttpClient, withFetch } from '@angular/common/
     NzModalModule,
     HttpClientModule,
     ReactiveFormsModule,
-
-
   ],
   template: `
     <h1>Gestión de Basureros</h1>
@@ -226,7 +224,7 @@ export class AppComponent implements OnInit {
           this.editMode = false;
           this.currentBasureroId = null;
           this.messageService.success('Basurero actualizado exitosamente');
-          this.getBasureros(); 
+          this.getBasureros(); // Refresh the list
         },
         error: (error) => {
           this.messageService.error('Error al actualizar basurero');
@@ -237,7 +235,7 @@ export class AppComponent implements OnInit {
   }
 
   deleteBasurero(basurero: Basurero): void {
-    if (basurero.id) {
+    if (basurero.id !== null) {
       this.basurerosService.deleteBasurero(basurero.id).subscribe({
         next: () => {
           this.basureros = this.basureros.filter(b => b.id !== basurero.id);
@@ -248,8 +246,6 @@ export class AppComponent implements OnInit {
           console.error('Error deleting basurero:', error);
         }
       });
-    } else {
-      this.messageService.error('No se puede eliminar un basurero sin ID');
     }
   }
 }

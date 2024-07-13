@@ -1,5 +1,7 @@
 export interface Basurero {
-  id: number;
-  nombre: string;
-  ubicacion: string;
+  id: number | null;
+  name: string;
+  location: string;
+  incharge: string;
+  capacity: number;
 }
